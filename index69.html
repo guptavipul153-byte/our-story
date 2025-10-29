@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Our Story in a Thousand Stars</title>
+  <style>
+    :root{
+      --bg:#0b1221; --accent:#ffd6e0; --gold:#ffd166; --muted:#9aa6b2;
+      --glass: rgba(255,255,255,0.06);
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#fff}
+    body{background: radial-gradient(ellipse at bottom, #081223 0%, #05060a 60%), var(--bg); overflow:hidden}
+
+    #sky{position:fixed;inset:0;z-index:0}
+    .center{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+
+    .card{width:880px;max-width:96%;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));backdrop-filter: blur(6px);border-radius:18px;padding:28px 30px;box-shadow:0 8px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03);}
+
+    h1{font-size:28px;margin:0 0 6px 0;color:var(--accent)}
+    p.lead{margin:0 0 18px 0;color:var(--muted)}
+
+    .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .btn{background:linear-gradient(90deg,var(--gold),#ff9db1);border:none;padding:10px 14px;border-radius:12px;color:#061428;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(255,133,150,0.12)}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer}
+
+    .playground{height:420px;border-radius:12px;margin-top:18px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.02)}
+    .star{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff, #ffd9e6 40%, rgba(255,209,230,0.2) 70%);box-shadow:0 0 8px rgba(255,200,220,0.18),0 0 18px rgba(255,180,200,0.06);cursor:pointer;transform:translate(-50%,-50%) scale(1);transition:transform .18s ease}
+    .star.small{width:6px;height:6px}
+    .star.twinkle{animation:twinkle 3s infinite}
+    @keyframes twinkle{0%{transform:translate(-50%,-50%) scale(.8)}50%{transform:translate(-50%,-50%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(.9)}}
+
+    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);min-width:320px;max-width:90%;background:linear-gradient(180deg, rgba(10,10,20,0.96), rgba(8,10,16,0.96));padding:18px;border-radius:14px;z-index:40;border:1px solid rgba(255,255,255,0.04);box-shadow:0 20px 60px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:all .2s ease}
+    .modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+    .msg{font-size:16px;line-height:1.5;color:#fff;margin:0 0 12px 0}
+    .meta{font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+
+    .heart{position:fixed;right:22px;bottom:22px;width:64px;height:64px;border-radius:50%;background:linear-gradient(180deg,#ff9db1,#ff6f91);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(255,105,150,0.18);cursor:pointer;z-index:30}
+    .heart svg{width:34px;height:34px;filter:drop-shadow(0 6px 12px rgba(255,105,150,0.15))}
+
+    .foot{margin-top:12px;text-align:right;color:var(--muted);font-size:13px}
+
+    @media (max-width:560px){.card{padding:18px}.playground{height:320px}}
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <div class="center">
+    <div class="card">
+      <h1>Our Story in a Thousand Stars</h1>
+      <p class="lead">Hi <span id="herName">Rani</span> — click the little stars and I'll tell you why I love you. No photos, only words.</p>
+
+      <div class="controls">
+        <button id="startBtn" class="btn">Begin the Sky</button>
+        <button id="resetBtn" class="ghost">Reset progress</button>
+        <div style="flex:1"></div>
+        <div class="foot">Made with care 💫 — Edit messages in the script</div>
+      </div>
+
+      <div class="playground" id="playground" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="msg" id="modalMsg"></div>
+    <div class="meta">
+      <div id="modalCount"></div>
+      <button id="closeBtn" class="ghost">Close</button>
+    </div>
+  </div>
+
+  <div class="heart" id="heart" title="Open my final note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 6.8a4.6 4.6 0 0 0-6.5 0L12 9.1l-2.3-2.3a4.6 4.6 0 1 0-6.5 6.5L12 22l8.8-8.8a4.6 4.6 0 0 0 0-6.4z"></path></svg>
+  </div>
+
+  <script>
+    const HER_NAME = 'Rani';
+    const MESSAGES = [
+      "The day I met you, time softly shifted — everything familiar felt new.",
+      "You laugh and my worst days fold into something small and bright.",
+      "I keep your kindness like a warm stone in my pocket — it steadies me.",
+      "Every quiet moment with you feels like a secret the world can't touch.",
+      "When I say 'forever', I mean the small ordinary tomorrows beside you.",
+      "You teach me patience, brave love, and how to be gentle with my heart.",
+      "I fell for your little brave things — the ones you never think anyone notices."
+    ];
+
+    document.getElementById('herName').textContent = HER_NAME;
+
+    const playground = document.getElementById('playground');
+    const modal = document.getElementById('modal');
+    const modalMsg = document.getElementById('modalMsg');
+    const modalCount = document.getElementById('modalCount');
+    const startBtn = document.getElementById('startBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const heart = document.getElementById('heart');
+
+    let read = JSON.parse(localStorage.getItem('starsRead') || '[]');
+
+    function createStars(n = 20){
+      playground.innerHTML = '';
+      for(let i=0;i<n;i++){
+        const el = document.createElement('div');
+        el.className = 'star ' + (Math.random()>0.75? 'twinkle':'');
+        if(Math.random()>0.8) el.classList.add('small');
+        const x = 6 + Math.random()*88;
+        const y = 6 + Math.random()*88;
+        el.style.left = x + '%';
+        el.style.top = y + '%';
+        el.dataset.index = i % MESSAGES.length;
+        el.style.animationDelay = (Math.random()*3)+'s';
+        el.addEventListener('click', onStarClick);
+        playground.appendChild(el);
+      }
+    }
+
+    function onStarClick(e){
+      const idx = Number(e.currentTarget.dataset.index);
+      showMessage(idx);
+      if(!read.includes(idx)){
+        read.push(idx);
+        localStorage.setItem('starsRead', JSON.stringify(read));
+        checkAllRead();
+      }
+      e.currentTarget.style.transform = 'translate(-50%,-50%) scale(1.6)';
+      setTimeout(()=>{e.currentTarget.style.transform='translate(-50%,-50%) scale(1)';},260);
+    }
+
+    function showMessage(i){
+      modalMsg.textContent = MESSAGES[i];
+      modalCount.textContent = `Note ${i+1} of ${MESSAGES.length}`;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden','false');
+    }
+
+    closeBtn.addEventListener('click',()=>{modal.classList.remove('show');modal.setAttribute('aria-hidden','true')});
+
+    startBtn.addEventListener('click',()=>{
+      startBtn.disabled = true;
+      startBtn.textContent = 'Stars awake...';
+      createStars(20);
+      setTimeout(()=>{startBtn.textContent='Explore the stars'; startBtn.disabled=false},800);
+    });
+
+    resetBtn.addEventListener('click',()=>{
+      if(confirm('Reset read progress?')){read=[];localStorage.removeItem('starsRead');alert('Reset. Click Begin the Sky to recreate the stars.')}});
+
+    function checkAllRead(){
+      const all = new Set(MESSAGES.map((_,i)=>i));
+      const got = new Set(read);
+      if(all.size>0 && [...all].every(x=>got.has(x))){
+        celebrate();
+      }
+    }
+
+    function celebrate(){
+      heart.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:900,iterations:3});
+      heart.title = 'Open my final note';
+    }
+
+    heart.addEventListener('click', ()=>{
+      modalMsg.innerHTML = `My dearest ${HER_NAME},<br><br>I've hidden my small reasons across these stars. You found them all — and still, my favorite reason is simply you. I love you, now and every little tomorrow.`;
+      modalCount.textContent = 'From me, always';
+      modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+    });
+
+    (function skyAnimation(){
+      const canvas = document.getElementById('sky');
+      const ctx = canvas.getContext('2d');
+      let w=canvas.width=innerWidth, h=canvas.height=innerHeight, stars=[];
+      function init(){
+        w=canvas.width=innerWidth; h=canvas.height=innerHeight; stars=[];
+        const count = Math.floor((w*h)/60000)+70;
+        for(let i=0;i<count;i++) stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.6+0.3,v:Math.random()*0.15+0.02});
+      }
+      function draw(){
+        ctx.clearRect(0,0,w,h);
+        for(const s of stars){
+          ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle = `rgba(255,255,255,${0.06 + Math.random()*0.22})`;ctx.fill();
+          s.y -= s.v; if(s.y < -10) s.y = h+10;
+        }
+        requestAnimationFrame(draw);
+      }
+      init(); draw();
+      addEventListener('resize', init);
+    })();
+
+    createStars(12);
+    checkAllRead();
+
+    window.addEventListener('keydown', (e)=>{if(e.key==='Escape') modal.classList.remove('show')});
+  </script>
+</body>
+</html>
